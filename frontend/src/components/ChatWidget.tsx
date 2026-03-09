@@ -1,30 +1,18 @@
 import { useState } from 'react';
-
-interface Message {
-  role: 'user' | 'assistant';
-  text: string;
-}
-
-// Definiujemy strukturę danych Timesheetu
-interface TimesheetState {
-  job: string | null;
-  date: string | null;
-  hours: number | null;
-  taskType: string | null;
-  billable: boolean | null;
-  description: string | null;
-}
+import { type Message, type TimesheetState } from '../types';
+import { sendChatMessage } from '../services/api';
 
 export const ChatWidget = () => {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // NOWOŚĆ: Stan dla mikrofonu (Punkt 5.1 VoiceInput)
   const [isListening, setIsListening] = useState(false);
+  
+  const [extractedData, setExtractedData] = useState<TimesheetState>({
+    job: null, date: null, hours: null, taskType: null, billable: null, description: null
+  });
 
   const startListening = () => {
-    // Sprawdzamy, czy przeglądarka wspiera Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy. Użyj Chrome lub Edge.");
@@ -32,31 +20,18 @@ export const ChatWidget = () => {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'pl-PL'; // Ustawiamy język polski
+    recognition.lang = 'pl-PL';
     recognition.interimResults = false;
 
     recognition.onstart = () => setIsListening(true);
-    
-    recognition.onresult = (event: any) => {
-      // Pobieramy rozpoznany tekst i wrzucamy do pola input
-      const transcript = event.results[0][0].transcript;
-      setInputText(transcript);
-    };
-
+    recognition.onresult = (event: any) => setInputText(event.results[0][0].transcript);
     recognition.onerror = (event: any) => {
       console.error("Błąd mikrofonu:", event.error);
       setIsListening(false);
     };
-
     recognition.onend = () => setIsListening(false);
-
     recognition.start();
   };
-  
-  //Trzymamy wyciągnięte dane w pamięci przeglądarki
-  const [extractedData, setExtractedData] = useState<TimesheetState>({
-    job: null, date: null, hours: null, taskType: null, billable: null, description: null
-  });
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -67,19 +42,9 @@ export const ChatWidget = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        //Wysyłamy wiadomość ORAZ to, co już do tej pory uzbieraliśmy
-        body: JSON.stringify({ 
-          message: userMsg.text,
-          currentState: extractedData 
-        })
-      });
+      // UŻYWAMY WYDZIELONEJ FUNKCJI API
+      const data = await sendChatMessage(userMsg.text, extractedData);
       
-      const data = await res.json();
-      
-      //Aktualizujemy naszą pamięć tym, co zwróciło AI
       if (data.entities) {
         setExtractedData(data.entities);
       }
@@ -90,6 +55,7 @@ export const ChatWidget = () => {
 
     } catch (error) {
       console.error("Błąd sieci:", error);
+      setMessages((prev) => [...prev, { role: 'assistant', text: 'Wystąpił błąd połączenia z serwerem.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -121,8 +87,6 @@ export const ChatWidget = () => {
         {isLoading && <div className="text-gray-400 text-xs self-start animate-pulse">Asystent myśli...</div>}
       </div>
 
-      {/* Pasek narzędzi (Debug) pokazujący, co asystent ma w pamięci */}
-      <div className="bg-gray-100 p-2 text-[10px] text-gray-500 font-mono flex flex-wrap gap-2 border-t">
       {extractedData.job && extractedData.date && extractedData.hours && (
         <div className="p-3 bg-green-50 border-t flex flex-col gap-2 border-green-200">
           <div className="text-sm text-green-800">
@@ -141,6 +105,8 @@ export const ChatWidget = () => {
           </button>
         </div>
       )}
+
+      <div className="bg-gray-100 p-2 text-[10px] text-gray-500 font-mono flex flex-wrap gap-2 border-t">
         <span>Pamięć AI:</span>
         <span className={extractedData.hours ? "text-green-600 font-bold" : ""}>Czas: {extractedData.hours || '?'}</span> | 
         <span className={extractedData.job ? "text-green-600 font-bold" : ""}>Projekt: {extractedData.job || '?'}</span> | 
