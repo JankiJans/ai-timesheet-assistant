@@ -25,30 +25,44 @@ app.get('/', (req: Request, res: Response) => {
 app.post('/api/chat', async (req: Request, res: Response) => {
   try {
     const userMessage = req.body.message;
+    // NOWOŚĆ: Odbieramy od frontendu to, co już wiemy o timesheecie
+    const currentState = req.body.currentState || {}; 
 
     if (!userMessage) {
       res.status(400).json({ error: "Wiadomość jest wymagana!" });
       return; 
     }
 
-    // --- LOGIKA DATY (Punkt 3.1 i 4) ---
     const now = new Date();
-    const today = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const today = now.toISOString().split('T')[0];
 
+    // Zaktualizowany Prompt (Punkt 5.2 Slot Tracking)
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash",
       systemInstruction: `Jesteś asystentem AI do raportowania czasu pracy. 
       DZISIAJ JEST: ${today}.
       
-      Zadania:
-      1. Wyciągnij encje z wiadomości.
-      2. ZAWSZE zamieniaj daty relatywne (wczoraj, dzisiaj, poniedziałek) na format YYYY-MM-DD.
-      3. Jeśli użytkownik poda datę z przyszłości (późniejszą niż ${today}), ustaw date: null i w replyToUser napisz, że nie można raportować czasu w przyszłość (Zgodnie z Punktem 4 regulaminu).
+      OBECNY STAN WYPEŁNIENIA DANYCH (Slot tracking):
+      ${JSON.stringify(currentState)}
+      
+      Zadania (Krok po kroku):
+      1. Przeanalizuj nową wiadomość użytkownika.
+      2. Zaktualizuj OBECNY STAN o nowe informacje wyciągnięte z wiadomości. Jeśli w obecnym stanie coś już jest wypełnione, NIE USUWAJ TEGO, tylko dodaj nowe dane.
+      3. Formatuj daty jako YYYY-MM-DD. Zakaz raportowania w przyszłość (ustaw date: null jeśli data jest z przyszłości).
+      4. Sprawdź, jakich danych wciąż brakuje w encjach (job, date, hours, taskType, billable, description).
+      5. W polu "replyToUser" zadaj naturalne pytanie o BRAKUJĄCE pola. Jeśli wszystkie kluczowe pola (job, date, hours) są wypełnione, zapytaj o potwierdzenie ("Czy zapisać wpis?").
       
       Odpowiadaj WYŁĄCZNIE w JSON:
       {
         "intent": "CREATE_TIMESHEET",
-        "entities": { "job": string, "date": string, "hours": number, "taskType": string, "billable": boolean, "description": string },
+        "entities": {
+          "job": string | null,
+          "date": string | null,
+          "hours": number | null,
+          "taskType": string | null,
+          "billable": boolean | null,
+          "description": string | null
+        },
         "replyToUser": string
       }`,
       generationConfig: { responseMimeType: "application/json" }
