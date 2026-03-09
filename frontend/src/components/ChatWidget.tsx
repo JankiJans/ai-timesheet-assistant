@@ -19,8 +19,41 @@ export const ChatWidget = () => {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // NOWOŚĆ: Stan dla mikrofonu (Punkt 5.1 VoiceInput)
+  const [isListening, setIsListening] = useState(false);
+
+  const startListening = () => {
+    // Sprawdzamy, czy przeglądarka wspiera Web Speech API
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy. Użyj Chrome lub Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pl-PL'; // Ustawiamy język polski
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    
+    recognition.onresult = (event: any) => {
+      // Pobieramy rozpoznany tekst i wrzucamy do pola input
+      const transcript = event.results[0][0].transcript;
+      setInputText(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Błąd mikrofonu:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
+  };
   
-  // NOWOŚĆ: Trzymamy wyciągnięte dane w pamięci przeglądarki
+  //Trzymamy wyciągnięte dane w pamięci przeglądarki
   const [extractedData, setExtractedData] = useState<TimesheetState>({
     job: null, date: null, hours: null, taskType: null, billable: null, description: null
   });
@@ -37,7 +70,7 @@ export const ChatWidget = () => {
       const res = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // NOWOŚĆ: Wysyłamy wiadomość ORAZ to, co już do tej pory uzbieraliśmy
+        //Wysyłamy wiadomość ORAZ to, co już do tej pory uzbieraliśmy
         body: JSON.stringify({ 
           message: userMsg.text,
           currentState: extractedData 
@@ -46,7 +79,7 @@ export const ChatWidget = () => {
       
       const data = await res.json();
       
-      // Aktualizujemy naszą pamięć tym, co zwróciło AI
+      //Aktualizujemy naszą pamięć tym, co zwróciło AI
       if (data.entities) {
         setExtractedData(data.entities);
       }
@@ -88,21 +121,46 @@ export const ChatWidget = () => {
         {isLoading && <div className="text-gray-400 text-xs self-start animate-pulse">Asystent myśli...</div>}
       </div>
 
-      {/* NOWOŚĆ: Pasek narzędzi (Debug) pokazujący, co asystent ma w pamięci */}
+      {/* Pasek narzędzi (Debug) pokazujący, co asystent ma w pamięci */}
       <div className="bg-gray-100 p-2 text-[10px] text-gray-500 font-mono flex flex-wrap gap-2 border-t">
+      {extractedData.job && extractedData.date && extractedData.hours && (
+        <div className="p-3 bg-green-50 border-t flex flex-col gap-2 border-green-200">
+          <div className="text-sm text-green-800">
+            <strong>Podsumowanie wpisu:</strong><br/>
+            Projekt: {extractedData.job} | Czas: {extractedData.hours}h | Data: {extractedData.date}
+          </div>
+          <button 
+            onClick={() => {
+              alert(`Hura! Zapisano timesheet dla ${extractedData.job} w systemie! 🎉`);
+              setExtractedData({ job: null, date: null, hours: null, taskType: null, billable: null, description: null });
+              setMessages(prev => [...prev, { role: 'assistant', text: 'Wpis został pomyślnie zapisany! W czym jeszcze mogę pomóc?' }]);
+            }}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-bold shadow-sm transition-colors"
+          >
+            Potwierdź i Zapisz (Create Timesheet)
+          </button>
+        </div>
+      )}
         <span>Pamięć AI:</span>
         <span className={extractedData.hours ? "text-green-600 font-bold" : ""}>Czas: {extractedData.hours || '?'}</span> | 
         <span className={extractedData.job ? "text-green-600 font-bold" : ""}>Projekt: {extractedData.job || '?'}</span> | 
         <span className={extractedData.date ? "text-green-600 font-bold" : ""}>Data: {extractedData.date || '?'}</span>
       </div>
 
-      <div className="p-3 bg-white border-t flex gap-2">
+      <div className="p-3 bg-white border-t flex gap-2 items-center">
+        <button
+          onClick={startListening}
+          className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+          title="Mów do asystenta"
+        >
+          {isListening ? '🔴' : '🎤'}
+        </button>
         <input 
           className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Odpowiedz asystentowi..."
+          placeholder="Wpisz lub powiedz wiadomość..."
           disabled={isLoading}
         />
         <button 
