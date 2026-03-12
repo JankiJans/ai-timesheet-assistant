@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MOCK_JOBS } from './data/mockJobs.js';
 import { getSystemInstruction } from './config/prompts.js';
+import { timesheetRouter } from './routes/timesheet.js';
 
 dotenv.config();
 
@@ -12,6 +13,9 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
+
+// Podłączamy router do aplikacji pod nowy adres URL
+app.use('/api/timesheet', timesheetRouter);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 

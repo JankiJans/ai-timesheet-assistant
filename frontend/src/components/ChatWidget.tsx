@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { type Message, type TimesheetState } from '../types';
-import { sendChatMessage } from '../services/api';
+import { sendChatMessage, createTimesheetEntry } from '../services/api';
 
 export const ChatWidget = () => {
   const [inputText, setInputText] = useState('');
@@ -94,14 +94,21 @@ export const ChatWidget = () => {
             Projekt: {extractedData.job} | Czas: {extractedData.hours}h | Data: {extractedData.date}
           </div>
           <button 
-            onClick={() => {
-              alert(`Hura! Zapisano timesheet dla ${extractedData.job} w systemie! 🎉`);
-              setExtractedData({ job: null, date: null, hours: null, taskType: null, billable: null, description: null });
-              setMessages(prev => [...prev, { role: 'assistant', text: 'Wpis został pomyślnie zapisany! W czym jeszcze mogę pomóc?' }]);
-            }}
-            className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-bold shadow-sm transition-colors"
-          >
-            Potwierdź i Zapisz (Create Timesheet)
+            onClick={async () => {
+           try {
+             // Generujemy unikalny klucz dla tej konkretnej próby zapisu
+             const idKey = crypto.randomUUID(); 
+             await createTimesheetEntry(extractedData, idKey);
+             setExtractedData({ job: null, date: null, hours: null, taskType: null, billable: null, description: null });
+             setMessages(prev => [...prev, { role: 'assistant', text: '✅ Wpis został pomyślnie zapisany w bazie! W czym jeszcze mogę pomóc?' }]);
+           } catch (err) {
+             console.error(err);
+             alert("Nie udało się zapisać wpisu.");
+           }
+         }}
+         className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-bold shadow-sm transition-colors"
+       >
+         Potwierdź i Zapisz (Create Timesheet)
           </button>
         </div>
       )}
