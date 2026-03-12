@@ -133,7 +133,7 @@ export const ChatWidget = () => {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Wpisz lub powiedz wiadomość..."
+          placeholder="W czym mogę ci dzisiaj pomóc?"
           disabled={isLoading}
         />
         <button 
