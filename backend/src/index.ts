@@ -2,9 +2,10 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { MOCK_JOBS } from './data/mockJobs.js';
+//import { MOCK_JOBS } from './data/mockJobs.js';
 import { getSystemInstruction } from './config/prompts.js';
 import { timesheetRouter } from './routes/timesheet.js';
+import { prisma } from './prisma.js';
 
 dotenv.config();
 
@@ -51,8 +52,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
       //WARSTWA NARZĘDZI I REGUŁ BIZNESOWYCH ---
       if (aiParsedResponse.entities?.job && !aiParsedResponse.entities.job.startsWith("JOB-")) {
-        const foundJob = MOCK_JOBS.find(j => 
-          j.title.toLowerCase().includes(aiParsedResponse.entities.job.toLowerCase())
+        const allJobs = await prisma.job.findMany();
+        const foundJob = allJobs.find(j => 
+        j.title.toLowerCase().includes(aiParsedResponse.entities.job.toLowerCase())
         );
 
         if (foundJob) {
