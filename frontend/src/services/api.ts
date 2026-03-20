@@ -30,3 +30,13 @@ export const createTimesheetEntry = async (timesheetData: TimesheetState, idempo
 
   return await response.json();
 };
+
+export const fetchTimesheets = async () => {
+  const response = await fetch('http://localhost:5000/api/timesheet/list');
+  
+  if (!response.ok) {
+    throw new Error('Błąd pobierania historii wpisów');
+  }
+
+  return await response.json();
+};

@@ -101,6 +101,7 @@ export const ChatWidget = () => {
              await createTimesheetEntry(extractedData, idKey);
              setExtractedData({ job: null, date: null, hours: null, taskType: null, billable: null, description: null });
              setMessages(prev => [...prev, { role: 'assistant', text: '✅ Wpis został pomyślnie zapisany w bazie! W czym jeszcze mogę pomóc?' }]);
+             window.dispatchEvent(new Event('timesheet-added'));
            } catch (err) {
              console.error(err);
              alert("Nie udało się zapisać wpisu.");

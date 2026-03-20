@@ -3,6 +3,22 @@ import { prisma } from '../prisma.js'; // Importujemy bazę
 
 export const timesheetRouter = Router();
 
+timesheetRouter.get('/list', async (req: Request, res: Response): Promise<any> => {
+  try {
+    // Pobieramy wpisy z bazy, sortując od najnowszego. 
+    // include: { job: true } sprawia, że Prisma od razu dociągnie nam nazwę projektu z tabeli Job!
+    const timesheets = await prisma.timesheet.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { job: true } 
+    });
+
+    return res.status(200).json(timesheets);
+  } catch (error) {
+    console.error("❌ Błąd pobierania wpisów:", error);
+    return res.status(500).json({ error: "Wystąpił błąd podczas pobierania historii" });
+  }
+});
+
 // Dodajemy "async", bo operacje na bazie wymagają czekania (await)
 timesheetRouter.post('/create', async (req: Request, res: Response): Promise<any> => {
   const { timesheetData, idempotencyKey } = req.body;
