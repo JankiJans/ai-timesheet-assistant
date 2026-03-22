@@ -44,7 +44,6 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       .filter(j => j.status === "active")
       .map(j => j.title)
       .join(', ');
-
     //Używamy wydzielonej funkcji do wygenerowania promptu
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",

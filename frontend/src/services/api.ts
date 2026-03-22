@@ -84,3 +84,11 @@ export const deleteTimesheet = async (id: number | string) => {
   
   return await response.json();
 };
+
+export const toggleJobStatus = async (jobNumber: string) => {
+  const response = await fetch(`http://localhost:5000/api/jobs/toggle-status/${jobNumber}`, {
+    method: 'PATCH',
+  });
+  if (!response.ok) throw new Error('Nie udało się zmienić statusu projektu');
+  return await response.json();
+};

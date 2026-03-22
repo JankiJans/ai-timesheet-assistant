@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchJobs, createJob, deleteJob } from '../services/api';
+import { fetchJobs, createJob, deleteJob, toggleJobStatus } from '../services/api';
 
 export const AdminPanel = () => {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -150,21 +150,42 @@ export const AdminPanel = () => {
                 ) : (
                   filteredJobs.map(job => (
                     <tr key={job.jobNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 text-base group transition-colors duration-300">
-                      <td className="p-4 font-mono text-gray-500 dark:text-gray-400">{job.jobNumber}</td>
-                      <td className="p-4 font-medium text-gray-800 dark:text-gray-200">{job.title}</td>
-                      <td className="p-4">
-                        <span className={`px-3 py-1 text-xs rounded-full uppercase font-bold 
-                          ${job.status === 'active' 
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
+                        <td className="p-4 font-mono text-gray-500 dark:text-gray-400">{job.jobNumber}</td>
+                        <td className="p-4 font-medium text-gray-800 dark:text-gray-200">{job.title}</td>
+                        <td className="p-4">
+                          <span className={`px-3 py-1 text-xs rounded-full uppercase font-bold 
+                            ${job.status === 'active' 
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                              : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+                            {job.status}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center flex justify-center gap-2">
+                        {/* Przycisk aktywacji/dezaktywacji */}
+                        <button
+                          onClick={async () => {
+                            try {
+                              await toggleJobStatus(job.jobNumber);
+                              loadJobs(); // Odświeżamy listę
+                              showNotification(`Projekt ${job.status === 'active' ? 'zdezaktywowany' : 'aktywowany'}`, "success");
+                            } catch (err) {
+                              showNotification("Błąd zmiany statusu", "error");
+                            }
+                          }}
+                          className={`p-2 rounded transition-colors ${
+                            job.status === 'active' 
+                              ? 'text-orange-500 hover:bg-orange-100 dark:hover:bg-orange-900/30' 
+                              : 'text-green-500 hover:bg-green-100 dark:hover:bg-green-900/30'
+                          }`}
+                          title={job.status === 'active' ? 'Dezaktywuj projekt' : 'Aktywuj projekt'}
+                        >
+                          {job.status === 'active' ? '🚫' : '✅'}
+                        </button>
+
+                        {/* Przycisk usuwania (zostaje bez zmian) */}
                         <button
                           onClick={() => handleDeleteClick(job.jobNumber, job.title)}
                           className="text-red-500 hover:text-white hover:bg-red-500 p-2 rounded transition-colors opacity-50 group-hover:opacity-100"
-                          title="Usuń projekt"
                         >
                           🗑️
                         </button>

@@ -6,7 +6,7 @@ export const getSystemInstruction = (today: string, currentState: any, available
   ${JSON.stringify(currentState)}
   
   WAŻNE ZASADY DOTYCZĄCE PROJEKTÓW (pole job):
-  1. Aktualnie dostępne, aktywne projekty w bazie to: [${availableJobs}].
+  1. Aktualnie dostępne, aktywne projekty w bazie to: [${availableJobs}].,
   2. Użytkownik może robić literówki (np. "moblinej") lub odmieniać nazwy przez przypadki (np. "Aplikacji mobilnej").
   3. Twoim zadaniem jest domyślić się, o który projekt chodzi i ZAWSZE zwracać w polu "job" DOKŁADNĄ, oficjalną nazwę z naszej listy.
   4. Jeśli użytkownik poda projekt, którego zupełnie nie ma na liście, zwróć w polu "job" dokładnie to słowo, które wpisał (nie zwracaj null, chyba że w ogóle nie wspomniał o żadnym projekcie).
@@ -30,4 +30,5 @@ export const getSystemInstruction = (today: string, currentState: any, available
     },
     "replyToUser": string
   }`;
+
 };

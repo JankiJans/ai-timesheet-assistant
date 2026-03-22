@@ -64,6 +64,16 @@ timesheetRouter.post('/create', async (req: Request, res: Response): Promise<any
       });
     }
 
+    const job = await prisma.job.findUnique({
+      where: { jobNumber: timesheetData.job }
+    });
+
+    if (!job || job.status !== 'active') {
+      return res.status(400).json({ 
+        error: "Nie można dodać wpisu! Ten projekt jest nieaktywny lub nie istnieje." 
+      });
+    }
+
     // --- ZAPIS DO BAZY MYSQL ---
     const newEntry = await prisma.timesheet.create({
       data: {

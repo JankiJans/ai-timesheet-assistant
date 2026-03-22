@@ -93,3 +93,27 @@ jobRouter.delete('/delete/:jobNumber', async (req: Request, res: Response): Prom
     return res.status(500).json({ error: "Błąd serwera podczas usuwania projektu" });
   }
 });
+
+jobRouter.patch('/toggle-status/:jobNumber', async (req: Request, res: Response): Promise<any> => {
+  const jobNumber  = req.params.jobNumber as string;
+
+  try {
+    const job = await prisma.job.findUnique({
+      where: { jobNumber: jobNumber }
+    });
+
+    if (!job) return res.status(404).json({ error: "Nie znaleziono projektu" });
+
+    const newStatus = job.status === 'active' ? 'inactive' : 'active';
+
+    const updatedJob = await prisma.job.update({
+      where: { jobNumber: jobNumber },
+      data: { status: newStatus }
+    });
+
+    console.log(`🔄 Zmieniono status projektu ${jobNumber} na: ${newStatus}`);
+    return res.status(200).json(updatedJob);
+  } catch (error) {
+    return res.status(500).json({ error: "Błąd serwera podczas zmiany statusu" });
+  }
+});
