@@ -1,0 +1,37 @@
+services:
+  # 1. Baza danych MySQL
+  db:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_DATABASE: timesheet_db
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # 2. Nasz serwer Node.js
+  backend:
+    build: ./backend
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      # Zauważ: zamiast localhost wpisujemy 'db' - tak Docker widzi bazę
+      DATABASE_URL: ${DATABASE_URL}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Nasza aplikacja React
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend
