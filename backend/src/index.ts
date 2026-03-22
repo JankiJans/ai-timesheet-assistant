@@ -2,10 +2,10 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-//import { MOCK_JOBS } from './data/mockJobs.js';
 import { getSystemInstruction } from './config/prompts.js';
 import { timesheetRouter } from './routes/timesheet.js';
 import { prisma } from './prisma.js';
+import { jobRouter } from './routes/job.js';
 
 dotenv.config();
 
@@ -17,6 +17,7 @@ app.use(express.json());
 
 // Podłączamy router do aplikacji pod nowy adres URL
 app.use('/api/timesheet', timesheetRouter);
+app.use('/api/jobs', jobRouter);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 

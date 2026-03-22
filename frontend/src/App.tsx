@@ -1,5 +1,6 @@
 import { ChatWidget } from './components/ChatWidget';
 import { TimesheetList } from './components/TimesheetList';
+import { AdminPanel } from './components/AdminPanel';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         {/* Prawa strona: Nasz Widget (usuwamy z niego klase 'fixed', żeby ładnie osiadł na stronie) */}
         <div className="w-full lg:w-[400px]">
           <ChatWidget />
+          <AdminPanel />
         </div>
       </div>
     </div>
