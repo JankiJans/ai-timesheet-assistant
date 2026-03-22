@@ -19,6 +19,7 @@ model Job {
   
   // Relacja: Jeden projekt może mieć wiele wpisów (timesheetów)
   timesheets Timesheet[] 
+  @@map("jobs")
 }
 
 // Tabela Wpisów Czasu Pracy (Punkt 3.1 z briefu)
@@ -38,4 +39,5 @@ model Timesheet {
   description    String?  @db.Text // @db.Text pozwala na dłuższe opisy
   
   createdAt      DateTime @default(now())
+  @@map("timesheets")
 }
