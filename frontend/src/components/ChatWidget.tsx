@@ -62,7 +62,7 @@ export const ChatWidget = () => {
   };
 
   return (
-    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] bg-white shadow-2xl rounded-xl border flex flex-col overflow-hidden font-sans">
+    <div className="flex flex-col w-full h-[400px] bg-white shadow-xl rounded-xl border overflow-hidden font-sans">
       <div className="bg-blue-600 text-white p-4 font-bold flex justify-between items-center">
         <span>AI Timesheet Assistant</span>
         <span className="text-xl">🤖</span>

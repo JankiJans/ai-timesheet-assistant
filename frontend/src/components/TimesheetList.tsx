@@ -29,7 +29,7 @@ export const TimesheetList = () => {
   }, []);
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border w-full max-w-3xl">
+    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg border w-full flex flex-col overflow-hidden">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Historia wpisów</h2>
         <button 

@@ -61,3 +61,14 @@ export const createJob = async (title: string) => {
   if (!response.ok) throw new Error(data.error || 'Błąd tworzenia projektu');
   return data;
 };
+
+// USUWANIE PROJEKTU
+export const deleteJob = async (jobNumber: string) => {
+  const response = await fetch(`http://localhost:5000/api/jobs/delete/${jobNumber}`, {
+    method: 'DELETE',
+  });
+  
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Błąd usuwania projektu');
+  return data;
+};

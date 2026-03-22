@@ -7,7 +7,7 @@ export const jobRouter = Router();
 jobRouter.get('/list', async (req: Request, res: Response): Promise<any> => {
   try {
     const jobs = await prisma.job.findMany({
-      orderBy: { title: 'asc' } // Sortujemy alfabetycznie po nazwie
+      orderBy: { jobNumber: 'asc' } // Sortujemy alfabetycznie po nazwie
     });
     return res.status(200).json(jobs);
   } catch (error) {
@@ -60,5 +60,36 @@ jobRouter.post('/create', async (req: Request, res: Response): Promise<any> => {
   } catch (error) {
     console.error("❌ Błąd dodawania projektu:", error);
     return res.status(500).json({ error: "Błąd podczas zapisu do bazy" });
+  }
+});
+
+// Endpoint do usuwania projektu
+jobRouter.delete('/delete/:jobNumber', async (req: Request, res: Response): Promise<any> => {
+  const jobNumber = req.params.jobNumber as string;
+
+  try {
+    // BEZPIECZEŃSTWO: Sprawdzamy, czy projekt ma już jakieś przypisane wpisy czasu pracy
+    const timesheetsCount = await prisma.timesheet.count({
+      where: { jobNumber: jobNumber }
+    });
+
+    if (timesheetsCount > 0) {
+      // Jeśli są wpisy, blokujemy usunięcie
+      return res.status(400).json({ 
+        error: `Nie można usunąć projektu! Ma on już ${timesheetsCount} przypisanych wpisów czasu pracy.` 
+      });
+    }
+
+    // Jeśli wpisów nie ma, bezpiecznie usuwamy projekt
+    await prisma.job.delete({
+      where: { jobNumber: jobNumber }
+    });
+
+    console.log(`🗑️ Usunięto projekt: ${jobNumber}`);
+    return res.status(200).json({ message: "Projekt usunięty pomyślnie" });
+
+  } catch (error) {
+    console.error("❌ Błąd usuwania projektu:", error);
+    return res.status(500).json({ error: "Błąd serwera podczas usuwania projektu" });
   }
 });
