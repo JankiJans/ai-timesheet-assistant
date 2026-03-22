@@ -38,10 +38,17 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     const now = new Date();
     const today = now.toISOString().split('T')[0] || '';
 
+    const allJobs = await prisma.job.findMany();
+    // Robimy z nich ładną, tekstową listę aktywnych projektów dla AI
+    const availableJobNames = allJobs
+      .filter(j => j.status === "active")
+      .map(j => j.title)
+      .join(', ');
+
     //Używamy wydzielonej funkcji do wygenerowania promptu
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      systemInstruction: getSystemInstruction(today, currentState),
+      systemInstruction: getSystemInstruction(today, currentState, availableJobNames),
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -51,11 +58,14 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     try {
       const aiParsedResponse = JSON.parse(text);
 
-      //WARSTWA NARZĘDZI I REGUŁ BIZNESOWYCH ---
+      // --- WARSTWA NARZĘDZI I REGUŁ BIZNESOWYCH ---
       if (aiParsedResponse.entities?.job && !aiParsedResponse.entities.job.startsWith("JOB-")) {
-        const allJobs = await prisma.job.findMany();
+        // Skoro AI nam to wyłapało i (miejmy nadzieję) poprawiło literówkę, mamy dokładną nazwę
+        const extractedJobName = aiParsedResponse.entities.job;
+
+        // Teraz szukamy idealnego dopasowania (AI powinno zadbać o format)
         const foundJob = allJobs.find(j => 
-        j.title.toLowerCase().includes(aiParsedResponse.entities.job.toLowerCase())
+          j.title.toLowerCase() === extractedJobName.toLowerCase()
         );
 
         if (foundJob) {
@@ -63,11 +73,17 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             aiParsedResponse.entities.job = null;
             aiParsedResponse.replyToUser = `Projekt "${foundJob.title}" jest już ZAMKNIĘTY. Nie możesz dodawać do niego czasu.`;
           } else {
+            // Zmieniamy nazwę tekstową na numer JOB-
             aiParsedResponse.entities.job = foundJob.jobNumber;
           }
         } else {
-          aiParsedResponse.entities.job = null;
-          aiParsedResponse.replyToUser = `Niestety nie znalazłem projektu o nazwie "${aiParsedResponse.entities.job}".`;
+          // Projektu nie ma na liście, więc odrzucamy go.
+          // W treści wiadomości wklejamy dokładnie to, co wymyślił użytkownik (bez słowa "null")
+          aiParsedResponse.replyToUser = `Niestety nie znalazłem projektu o nazwie "${extractedJobName}". Dostępne projekty to: ${availableJobNames}.`;
+          
+          // Ustawiamy pole z powrotem na null, żeby w aplikacji na froncie 
+          // pole z projektem znowu wyświetliło "?", czekając na poprawną nazwę
+          aiParsedResponse.entities.job = null; 
         }
       }
 

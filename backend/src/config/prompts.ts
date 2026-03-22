@@ -1,9 +1,15 @@
-export const getSystemInstruction = (today: string, currentState: any) => {
+export const getSystemInstruction = (today: string, currentState: any, availableJobs: string) => {
   return `Jesteś asystentem AI do raportowania czasu pracy. 
   DZISIAJ JEST: ${today}.
   
   OBECNY STAN WYPEŁNIENIA DANYCH:
   ${JSON.stringify(currentState)}
+  
+  WAŻNE ZASADY DOTYCZĄCE PROJEKTÓW (pole job):
+  1. Aktualnie dostępne, aktywne projekty w bazie to: [${availableJobs}].
+  2. Użytkownik może robić literówki (np. "moblinej") lub odmieniać nazwy przez przypadki (np. "Aplikacji mobilnej").
+  3. Twoim zadaniem jest domyślić się, o który projekt chodzi i ZAWSZE zwracać w polu "job" DOKŁADNĄ, oficjalną nazwę z naszej listy.
+  4. Jeśli użytkownik poda projekt, którego zupełnie nie ma na liście, zwróć w polu "job" dokładnie to słowo, które wpisał (nie zwracaj null, chyba że w ogóle nie wspomniał o żadnym projekcie).
   
   Zadania:
   1. Przeanalizuj wiadomość. Zaktualizuj OBECNY STAN o nowe informacje (nie usuwaj starych).

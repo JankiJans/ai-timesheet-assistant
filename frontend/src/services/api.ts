@@ -72,3 +72,15 @@ export const deleteJob = async (jobNumber: string) => {
   if (!response.ok) throw new Error(data.error || 'Błąd usuwania projektu');
   return data;
 };
+
+export const deleteTimesheet = async (id: number | string) => {
+  const response = await fetch(`http://localhost:5000/api/timesheet/${id}`, {
+    method: 'DELETE',
+  });
+  
+  if (!response.ok) {
+    throw new Error('Nie udało się usunąć wpisu');
+  }
+  
+  return await response.json();
+};

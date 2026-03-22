@@ -19,6 +19,29 @@ timesheetRouter.get('/list', async (req: Request, res: Response): Promise<any> =
   }
 });
 
+timesheetRouter.delete('/:id', async (req: Request, res: Response): Promise<any> => {
+  const id = req.params.id as string;
+
+  if (!id) {
+    return res.status(400).json({ error: "Nieprawidłowe ID wpisu" });
+  }
+
+  try {
+    await prisma.timesheet.delete({
+      where: { 
+        id: id
+      }
+    });
+
+    console.log(`🗑️ Usunięto wpis czasu pracy o ID: ${id}`);
+    return res.status(200).json({ message: "Wpis usunięty pomyślnie" });
+
+  } catch (error) {
+    console.error("❌ Błąd usuwania wpisu:", error);
+    return res.status(500).json({ error: "Błąd serwera podczas usuwania wpisu" });
+  }
+});
+
 // Dodajemy "async", bo operacje na bazie wymagają czekania (await)
 timesheetRouter.post('/create', async (req: Request, res: Response): Promise<any> => {
   const { timesheetData, idempotencyKey } = req.body;
