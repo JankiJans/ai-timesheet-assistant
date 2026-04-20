@@ -6,12 +6,12 @@ import { CreateTimesheetDto } from './dto/create-timesheet.dto';
 export class TimesheetsController {
   constructor(private readonly timesheetsService: TimesheetsService) {}
 
-  @Get('list')
+  @Get()
   async findAll() {
     return await this.timesheetsService.findAll();
   }
 
-  @Post('create')
+  @Post() 
   async create(@Body() createTimesheetDto: CreateTimesheetDto) {
     return await this.timesheetsService.create(createTimesheetDto);
   }

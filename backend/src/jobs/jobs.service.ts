@@ -8,17 +8,15 @@ export class JobsService {
 
   async findAll() {
     return await this.prisma.job.findMany({
-      orderBy: { jobNumber: 'asc' }, // Sortujemy alfabetycznie po nazwie
+      orderBy: { jobNumber: 'asc' },
     });
   }
 
   async create(createJobDto: CreateJobDto) {
-    // 1. Znajdujemy projekt z najwyższym numerem w bazie
     const lastJob = await this.prisma.job.findFirst({
       orderBy: { jobNumber: 'desc' },
     });
 
-    // 2. Generujemy nowy numer
     let nextNumber = 1;
     if (lastJob && lastJob.jobNumber.startsWith('JOB-')) {
       const lastNumberStr = lastJob.jobNumber.split('-')[1];
@@ -29,7 +27,6 @@ export class JobsService {
     }
     const newJobNumber = `JOB-${nextNumber.toString().padStart(3, '0')}`;
 
-    // 3. Zapisujemy do bazy
     return await this.prisma.job.create({
       data: {
         jobNumber: newJobNumber,
@@ -40,13 +37,11 @@ export class JobsService {
   }
 
   async remove(jobNumber: string) {
-    // Sprawdzamy, czy projekt ma przypisane jakieś godziny
     const timesheetsCount = await this.prisma.timesheet.count({
       where: { jobNumber: jobNumber },
     });
 
     if (timesheetsCount > 0) {
-      // Magia NestJS: automatycznie wyśle status 400 z tym komunikatem!
       throw new BadRequestException(`Nie można usunąć projektu! Ma on już ${timesheetsCount} przypisanych wpisów czasu pracy.`);
     }
 
@@ -63,7 +58,7 @@ export class JobsService {
     });
 
     if (!job) {
-      throw new NotFoundException('Nie znaleziono projektu'); // Status 404
+      throw new NotFoundException('Nie znaleziono projektu');
     }
 
     const newStatus = job.status === 'active' ? 'inactive' : 'active';

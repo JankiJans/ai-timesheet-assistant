@@ -1,18 +1,23 @@
-import { IsOptional, IsString, IsNotEmpty } from 'class-validator';
+import { IsOptional, IsString, IsNotEmpty, IsNumber, IsDateString, Min, Max, IsUUID } from 'class-validator';
 
 export class CreateTimesheetDto {
-  @IsString()
+  @IsUUID('4', { message: 'Klucz idempotencji musi być poprawnym UUID.' })
   @IsNotEmpty()
   idempotencyKey!: string;
 
-  @IsOptional()
-  job?: any; 
+  @IsString({ message: 'Projekt musi być tekstem.' })
+  @IsNotEmpty({ message: 'Brakuje przypisanego projektu.' })
+  job!: string; 
 
-  @IsOptional()
-  date?: any; 
+  @IsDateString({}, { message: 'Data musi być w poprawnym formacie YYYY-MM-DD.' })
+  @IsNotEmpty({ message: 'Brakuje daty.' })
+  date!: string; 
 
-  @IsOptional()
-  hours?: any; 
+  @IsNumber({}, { message: 'Godziny muszą być liczbą.' })
+  @Min(0.1, { message: 'Czas pracy musi być większy niż 0.' })
+  @Max(24, { message: 'Czas pracy nie może przekroczyć 24 godzin w ciągu doby.' })
+  @IsNotEmpty({ message: 'Brakuje liczby godzin.' })
+  hours!: number; 
 
   @IsOptional()
   taskType?: any;
@@ -23,7 +28,4 @@ export class CreateTimesheetDto {
   @IsString()
   @IsOptional()
   description?: string;
-
-  @IsOptional()
-  timesheetData?: any;
 }

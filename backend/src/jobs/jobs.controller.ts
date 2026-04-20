@@ -6,22 +6,22 @@ import { CreateJobDto } from './dto/create-job.dto';
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
-  @Get('list')
+  @Get()
   async findAll() {
     return await this.jobsService.findAll();
   }
 
-  @Post('create')
+  @Post()
   async create(@Body() createJobDto: CreateJobDto) {
     return await this.jobsService.create(createJobDto);
   }
 
-  @Delete(':delete/:jobNumber')
+  @Delete(':jobNumber')
   async remove(@Param('jobNumber') jobNumber: string) {
     return await this.jobsService.remove(jobNumber);
   }
 
-  @Patch('toggle-status/:jobNumber')
+  @Patch(':jobNumber/toggle-status')
   async toggleStatus(@Param('jobNumber') jobNumber: string) {
     return await this.jobsService.toggleStatus(jobNumber);
   }

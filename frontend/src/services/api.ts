@@ -18,10 +18,10 @@ export const sendChatMessage = async (message: string, currentState: TimesheetSt
 };
 
 export const createTimesheetEntry = async (timesheetData: TimesheetState, idempotencyKey: string) => {
-  const response = await fetch('http://localhost:5000/api/timesheet/create', {
+  const response = await fetch('http://localhost:5000/api/timesheet', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ timesheetData, idempotencyKey })
+    body: JSON.stringify({ ...timesheetData, idempotencyKey }) 
   });
 
   if (!response.ok) {
@@ -30,9 +30,9 @@ export const createTimesheetEntry = async (timesheetData: TimesheetState, idempo
 
   return await response.json();
 };
-
 export const fetchTimesheets = async () => {
-  const response = await fetch('http://localhost:5000/api/timesheet/list');
+  // ZMIANA: Usunięto '/list'
+  const response = await fetch('http://localhost:5000/api/timesheet');
   
   if (!response.ok) {
     throw new Error('Błąd pobierania historii wpisów');
@@ -43,17 +43,18 @@ export const fetchTimesheets = async () => {
 
 // POBIERANIE PROJEKTÓW
 export const fetchJobs = async () => {
-  const response = await fetch('http://localhost:5000/api/jobs/list');
+  // ZMIANA: Usunięto '/list'
+  const response = await fetch('http://localhost:5000/api/jobs');
   if (!response.ok) throw new Error('Błąd pobierania projektów');
   return await response.json();
 };
 
 // DODAWANIE PROJEKTU
 export const createJob = async (title: string) => {
-  const response = await fetch('http://localhost:5000/api/jobs/create', {
+  // ZMIANA: Usunięto '/create'
+  const response = await fetch('http://localhost:5000/api/jobs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    // Wysyłamy tylko title
     body: JSON.stringify({ title }) 
   });
   
@@ -64,7 +65,8 @@ export const createJob = async (title: string) => {
 
 // USUWANIE PROJEKTU
 export const deleteJob = async (jobNumber: string) => {
-  const response = await fetch(`http://localhost:5000/api/jobs/delete/${jobNumber}`, {
+  // ZMIANA: Usunięto słowo '/delete'. ID przekazujemy bezpośrednio po nazwie zasobu.
+  const response = await fetch(`http://localhost:5000/api/jobs/${jobNumber}`, {
     method: 'DELETE',
   });
   
@@ -73,6 +75,7 @@ export const deleteJob = async (jobNumber: string) => {
   return data;
 };
 
+// USUWANIE TIMESHEETU - Tu miałeś już wzorowo napisane od początku! :)
 export const deleteTimesheet = async (id: number | string) => {
   const response = await fetch(`http://localhost:5000/api/timesheet/${id}`, {
     method: 'DELETE',
@@ -85,8 +88,10 @@ export const deleteTimesheet = async (id: number | string) => {
   return await response.json();
 };
 
+// ZMIANA STATUSU PROJEKTU
 export const toggleJobStatus = async (jobNumber: string) => {
-  const response = await fetch(`http://localhost:5000/api/jobs/toggle-status/${jobNumber}`, {
+  // ZMIANA: W REST akcje na konkretnym elemencie podajemy po jego ID.
+  const response = await fetch(`http://localhost:5000/api/jobs/${jobNumber}/toggle-status`, {
     method: 'PATCH',
   });
   if (!response.ok) throw new Error('Nie udało się zmienić statusu projektu');
