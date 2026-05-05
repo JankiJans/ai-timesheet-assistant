@@ -14,7 +14,8 @@ services:
       retries: 10
 
   # 2. Nasz serwer Node.js
-  backend:
+  backend: 
+    container_name: ai-timesheet-assistant-backend-1
     build: ./backend
     ports:
       - "${PORT}:${PORT}"
