@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { type Message, type TimesheetState } from '../types';
 import { sendChatMessage, createTimesheetEntry } from '../services/api';
 
+/**
+ * Komponent interaktywnego widżetu czatu z Asystentem AI.
+ * Służy do automatycznego parsowania wiadomości tekstowych (lub głosowych)
+ * na ustrukturyzowane wpisy czasu pracy (Timesheets).
+ * * @component
+ * @example
+ * return (
+ * <ChatWidget />
+ * )
+ */
 export const ChatWidget = () => {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -12,6 +22,10 @@ export const ChatWidget = () => {
     job: null, date: null, hours: null, taskType: null, billable: null, description: null
   });
 
+  /**
+   * Inicjuje wbudowane w przeglądarkę API rozpoznawania mowy (Web Speech API).
+   * Zamienia mowę użytkownika na tekst i wpisuje go do pola input.
+   */
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("Twoja przeglądarka nie obsługuje rozpoznawania mowy.");
@@ -25,6 +39,11 @@ export const ChatWidget = () => {
     recognition.start();
   };
 
+  /**
+   * Obsługuje wysyłanie wiadomości użytkownika do backendu AI.
+   * Aktualizuje historię czatu, blokuje interfejs na czas ładowania,
+   * a po otrzymaniu odpowiedzi od AI – aktualizuje stan "extractedData".
+   */
   const sendMessage = async () => {
     if (!inputText.trim()) return;
     const userMsg: Message = { role: 'user', text: inputText };

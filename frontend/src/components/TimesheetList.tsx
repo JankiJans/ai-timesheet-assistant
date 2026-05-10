@@ -1,18 +1,31 @@
 import { useEffect, useState } from 'react';
-// PAMIĘTAJ O ZAIMPORTOWANIU deleteTimesheet!
 import { fetchTimesheets, deleteTimesheet } from '../services/api';
 
+/**
+ * Komponent wyświetlający historię wpisów czasu pracy.
+ * Pobiera i renderuje listę ustrukturyzowanych danych pobranych z bazy.
+ * Pozwala użytkownikowi na przeglądanie długich opisów oraz bezpieczne usuwanie wpisów.
+ * Reaguje na globalne zdarzenie 'timesheet-added' w celu automatycznego odświeżenia tabeli.
+ * * @component
+ * @example
+ * return (
+ * <TimesheetList />
+ * )
+ */
 export const TimesheetList = () => {
   const [timesheets, setTimesheets] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
   
-  // NOWOŚĆ: Stany do usuwania i powiadomień
   const [entryToDelete, setEntryToDelete] = useState<any | null>(null);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [isToastFading, setIsToastFading] = useState(false);
 
-  // Funkcja obsługująca ładne powiadomienia (Toast)
+  /**
+   * Wyświetla powiadomienie po pomyślnej akcji lub w przypadku błędu.
+   * * @param message - Treść do wyświetlenia na ekranie.
+   * @param type - Oznaczenie wizualne błędu lub sukcesu.
+   */
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
     setIsToastFading(false);
@@ -20,6 +33,9 @@ export const TimesheetList = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  /**
+   * Pobiera najnowsze wpisy timesheet z backendu i aktualizuje stan tabeli.
+   */
   const loadData = async () => {
     try {
       setIsLoading(true);
@@ -38,25 +54,27 @@ export const TimesheetList = () => {
     return () => window.removeEventListener('timesheet-added', loadData);
   }, []);
 
-  // NOWOŚĆ: Właściwa funkcja usuwająca wpis po potwierdzeniu w Modalu
+  /**
+   * Właściwa funkcja usuwająca wpis po akceptacji przez użytkownika w oknie Modal.
+   * Obsługuje błędy i wyświetla powiadomienia Toast.
+   */
   const confirmDelete = async () => {
     if (!entryToDelete) return;
 
     try {
       await deleteTimesheet(entryToDelete.id);
-      loadData(); // Odświeżamy tabelę po usunięciu
+      loadData(); 
       showNotification("Wpis został usunięty.", "success");
     } catch (error: any) {
       showNotification(`Błąd usuwania: ${error.message}`, "error");
     } finally {
-      setEntryToDelete(null); // Zamykamy modal
+      setEntryToDelete(null); 
     }
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 w-full flex flex-col h-[500px] relative transition-colors duration-300">
       
-      {/* TOAST NOTIFICATION (Powiadomienie) */}
       {notification && (
         <div className={`fixed bottom-8 right-8 p-4 rounded-xl shadow-2xl font-bold text-white z-[100] transition-all duration-500 ease-in-out flex items-center gap-3
           ${notification.type === 'success' ? 'bg-green-500 dark:bg-green-600' : 'bg-red-500 dark:bg-red-600'}
@@ -89,7 +107,7 @@ export const TimesheetList = () => {
                 <th className="p-3">Projekt</th>
                 <th className="p-3 text-center">Godziny</th>
                 <th className="p-3 w-1/3 sm:w-1/2">Typ / Opis</th>
-                <th className="p-3 text-center">Akcje</th> {/* NOWA KOLUMNA */}
+                <th className="p-3 text-center">Akcje</th> 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300">
@@ -126,7 +144,6 @@ export const TimesheetList = () => {
                       </span>
                     </div>
                   </td>
-                  {/* NOWA KOMÓRKA Z PRZYCISKIEM USUWANIA */}
                   <td className="p-3 text-center">
                     <button
                       onClick={() => setEntryToDelete(ts)}
@@ -143,7 +160,6 @@ export const TimesheetList = () => {
         </div>
       )}
 
-      {/* MODAL Z PEŁNYM OPISEM (zostaje bez zmian) */}
       {selectedDescription && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-lg transform transition-all border dark:border-gray-700">
@@ -162,7 +178,6 @@ export const TimesheetList = () => {
         </div>
       )}
 
-      {/* NOWOŚĆ: MODAL POTWIERDZENIA USUNIĘCIA WPISU */}
       {entryToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all border border-transparent dark:border-gray-700">

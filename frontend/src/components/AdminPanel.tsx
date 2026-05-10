@@ -1,6 +1,23 @@
 import { useState, useEffect } from 'react';
 import { fetchJobs, createJob, deleteJob, toggleJobStatus } from '../services/api';
 
+/**
+ * Komponent głównego widoku Panelu Administracyjnego.
+ * Odpowiada za zarządzanie projektami (Jobs) w systemie.
+ * Pozwala na:
+ * - Pobieranie i wyświetlanie listy projektów z bazy danych.
+ * - Dodawanie nowych projektów.
+ * - Usuwanie projektów (z użyciem modala potwierdzającego).
+ * - Zmianę statusu projektu (aktywny / zamknięty).
+ * * @component
+ * @example
+ * // Użycie w głównym pliku aplikacji (np. App.tsx)
+ * return (
+ * <div className="layout">
+ * <AdminPanel />
+ * </div>
+ * )
+ */
 export const AdminPanel = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [title, setTitle] = useState('');
@@ -12,6 +29,12 @@ export const AdminPanel = () => {
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [isToastFading, setIsToastFading] = useState(false);
 
+  /**
+   * Wyświetla powiadomienie typu "Toast" w prawym dolnym rogu ekranu.
+   * Powiadomienie automatycznie znika po 3 sekundach.
+   * * @param message - Treść powiadomienia do wyświetlenia.
+   * @param type - Typ powiadomienia określający jego kolor ('success' - zielony, 'error' - czerwony).
+   */
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
     setIsToastFading(false);
@@ -25,6 +48,9 @@ export const AdminPanel = () => {
     }, 3000);
   };
 
+  /**
+   * Asynchronicznie pobiera listę projektów z API i zapisuje ją w stanie komponentu.
+   */
   const loadJobs = async () => {
     try {
       const data = await fetchJobs();
@@ -38,6 +64,10 @@ export const AdminPanel = () => {
     loadJobs();
   }, []);
 
+  /**
+   * Obsługuje wysłanie formularza dodawania nowego projektu.
+   * Waliduje puste pola, wywołuje API i odświeża listę projektów.
+   */
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -59,6 +89,9 @@ export const AdminPanel = () => {
     setJobToDelete({ jobNumber, title });
   };
 
+  /**
+   * Wykonuje ostateczne usunięcie projektu po potwierdzeniu przez użytkownika w modalu.
+   */
   const confirmDelete = async () => {
     if (!jobToDelete) return;
 
@@ -161,12 +194,11 @@ export const AdminPanel = () => {
                           </span>
                         </td>
                         <td className="p-4 text-center flex justify-center gap-2">
-                        {/* Przycisk aktywacji/dezaktywacji */}
                         <button
                           onClick={async () => {
                             try {
                               await toggleJobStatus(job.jobNumber);
-                              loadJobs(); // Odświeżamy listę
+                              loadJobs(); 
                               showNotification(`Projekt ${job.status === 'active' ? 'zdezaktywowany' : 'aktywowany'}`, "success");
                             } catch (err) {
                               showNotification("Błąd zmiany statusu", "error");
@@ -182,7 +214,6 @@ export const AdminPanel = () => {
                           {job.status === 'active' ? '🚫' : '✅'}
                         </button>
 
-                        {/* Przycisk usuwania (zostaje bez zmian) */}
                         <button
                           onClick={() => handleDeleteClick(job.jobNumber, job.title)}
                           className="text-red-500 hover:text-white hover:bg-red-500 p-2 rounded transition-colors opacity-50 group-hover:opacity-100"
