@@ -65,17 +65,30 @@ export class AiService {
 
     let currentMessage = userMessage;
 
+    const todayDate = new Date().toISOString().split('T')[0];
+
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const prompt = `
           Jesteś asystentem AI ds. czasu pracy. Twoim zadaniem jest parsowanie wiadomości i uzupełnianie JSONa.
           Aktualny stan formularza: ${JSON.stringify(currentState)}
           Dostępne AKTYWNE projekty w bazie to: [${availableJobNames}].
+          Dzisiejsza data to: ${todayDate}.
           
           ZASADY:
-          1. Zwróć obiekt JSON pasujący do DTO: { "replyToUser": "tekst", "entities": { "job": "nazwa", "hours": liczba } }
+          1. Zwróć obiekt JSON pasujący DOKŁADNIE do tego schematu (zawsze zwracaj wszystkie pola w entities!): 
+          { 
+            "replyToUser": "tekst", 
+            "entities": { 
+              "job": "nazwa lub null", 
+              "hours": liczba_lub_null, 
+              "date": "YYYY-MM-DD", 
+              "description": "tekst lub null" 
+            } 
+          }
           2. Jeśli użytkownik podaje projekt, MUSI on pasować do jednego z dostępnych.
-          3. Pamiętaj obecny stan (jeśli był podany wcześniej, nie nadpisuj go nullem, chyba że użytkownik o to prosi).
+          3. Pamiętaj obecny stan! Jeśli w aktualnym stanie formularza są już jakieś dane (np. projekt), PRZEPISZ JE do nowej odpowiedzi, chyba że użytkownik wyraźnie prosi o ich zmianę.
+          4. POLE DATE JEST OBOWIĄZKOWE. Jeśli użytkownik nie wspomniał o dacie, ZAWSZE wstawiaj dzisiejszą ("${todayDate}"). Jeśli powie "wczoraj", oblicz wczorajszą datę.
           
           Wiadomość użytkownika: "${currentMessage}"
         `;

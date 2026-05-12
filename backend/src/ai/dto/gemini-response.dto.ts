@@ -12,6 +12,14 @@ export class AiEntitiesDto {
   @IsOptional()
   @IsNumber()
   hours?: number | null;
+
+  @IsOptional()
+  @IsString()
+  date?: string | null;
+
+  @IsOptional()
+  @IsString()
+  description?: string | null;
 }
 
 /**
