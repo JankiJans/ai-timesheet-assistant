@@ -20,6 +20,9 @@ export class AiEntitiesDto {
   @IsOptional()
   @IsString()
   description?: string | null;
+
+  @IsString()
+  currentBot?: string
 }
 
 /**

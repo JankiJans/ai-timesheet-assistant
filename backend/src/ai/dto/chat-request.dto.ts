@@ -20,4 +20,8 @@ export class ChatRequestDto {
   @IsOptional()
   @IsObject()
   currentState?: Record<string, any>;
+
+  @IsString()
+  @IsOptional()
+  currentBot?: string;
 }

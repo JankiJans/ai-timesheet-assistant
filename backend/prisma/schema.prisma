@@ -37,6 +37,7 @@ model Timesheet {
   taskType       String?  // Znak zapytania oznacza, że pole jest opcjonalne (może być null)
   billable       Boolean?
   description    String?  @db.Text // @db.Text pozwala na dłuższe opisy
+  currentBot     String?
   
   createdAt      DateTime @default(now())
   @@map("timesheets")

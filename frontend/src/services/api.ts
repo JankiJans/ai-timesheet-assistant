@@ -12,13 +12,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
  * const response = await sendChatMessage("dodaj 5h na dzisiaj", currentState);
  * console.log(response.message);
  */
-export const sendChatMessage = async (message: string, currentState: TimesheetState) => {
+export const sendChatMessage = async (message: string, currentState: TimesheetState, currentBot: string) => {
   const response = await fetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
       message: message,
-      currentState: currentState 
+      currentState: currentState,
+      currentBot: currentBot
     })
   });
 
@@ -38,11 +39,11 @@ export const sendChatMessage = async (message: string, currentState: TimesheetSt
  * const data = { job: 'JOB-001', hours: 8, date: '2026-05-10', description: 'Praca nad API', taskType: 'Dev', billable: true };
  * const newEntry = await createTimesheetEntry(data, "123e4567-e89b-12d3-a456-426614174000");
  */
-export const createTimesheetEntry = async (timesheetData: TimesheetState, idempotencyKey: string) => {
+export const createTimesheetEntry = async (timesheetData: TimesheetState, idempotencyKey: string, currentBot: string) => {
   const response = await fetch(`${API_BASE_URL}/api/timesheet`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...timesheetData, idempotencyKey }) 
+    body: JSON.stringify({ ...timesheetData, idempotencyKey, currentBot }) 
   });
 
   if (!response.ok) {

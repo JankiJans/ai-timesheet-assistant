@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { GeminiResponseDto } from './dto/gemini-response.dto';
-
+import { OpenAI } from 'openai';
 /**
  * Główny serwis odpowiedzialny za komunikację z modelem językowym Google Gemini.
  * Obejmuje skomplikowaną logikę inżynierii promptów (Prompt Engineering),
@@ -14,9 +14,11 @@ import { GeminiResponseDto } from './dto/gemini-response.dto';
 @Injectable()
 export class AiService {
   private genAI: GoogleGenerativeAI;
+  private genGpt: OpenAI;
 
   constructor(private readonly prisma: PrismaService) {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+    this.genGpt = new OpenAI({apiKey: process.env.OPENAI_API_KEY || ''});
   }
 
   /**
@@ -26,15 +28,22 @@ export class AiService {
    * @param currentState - Pamięć czatu przekazana z frontendu.
    * @returns {Promise<GeminiResponseDto>} W pełni sformatowana i poprawna odpowiedź do klienta.
    */
-  async processChat(userMessage: string, currentState: any): Promise<GeminiResponseDto> {
+  async processChat(userMessage: string, currentState: any, currentBot: string): Promise<GeminiResponseDto> {
     const { allJobs, availableJobNames } = await this.fetchJobData();
 
-    // Wywołanie pętli Retry z walidacją AI
-    const dtoInstance = await this.getValidatedAiResponse(userMessage, currentState, availableJobNames);
+    let dtoInstance: GeminiResponseDto
 
-    // Nałożenie twardych reguł logiki (np. nadpisanie statusu zamkniętego projektu)
+    if (currentBot === 'chatgpt') {
+      dtoInstance = await this.getValidatedGptResponse(userMessage, currentState, availableJobNames);
+    } else {
+      dtoInstance = await this.getValidatedAiResponse(userMessage, currentState, availableJobNames);
+    }
+
     this.applyBusinessRules(dtoInstance, allJobs, availableJobNames);
 
+    if (dtoInstance.entities) {
+      dtoInstance.entities.currentBot = currentBot; 
+    }
     return dtoInstance;
   }
 
@@ -67,7 +76,7 @@ export class AiService {
 
     const todayDate = new Date().toISOString().split('T')[0];
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const prompt = `
           Jesteś asystentem AI ds. czasu pracy. Twoim zadaniem jest parsowanie wiadomości i uzupełnianie JSONa.
@@ -83,7 +92,7 @@ export class AiService {
               "job": "nazwa lub null", 
               "hours": liczba_lub_null, 
               "date": "YYYY-MM-DD", 
-              "description": "tekst lub null" 
+              "description": "tekst lub null",
             } 
           }
           2. Jeśli użytkownik podaje projekt, MUSI on pasować do jednego z dostępnych.
@@ -117,6 +126,70 @@ export class AiService {
 
     throw new InternalServerErrorException('AI ma dzisiaj gorszy dzień i nie potrafi zwrócić poprawnych danych.');
   }
+
+private async getValidatedGptResponse(userMessage: string, currentState: any, availableJobNames: string): Promise<GeminiResponseDto> {
+    let currentMessage = userMessage;
+    const todayDate = new Date().toISOString().split('T')[0];
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await this.genGpt.chat.completions.create({
+          model: 'gpt-3.5-turbo',
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'system',
+              content: `
+              Jesteś asystentem AI ds. czasu pracy. Twoim zadaniem jest parsowanie wiadomości i uzupełnianie JSONa.
+              Aktualny stan formularza: ${JSON.stringify(currentState)}
+              Dostępne AKTYWNE projekty w bazie to: [${availableJobNames}].
+              Dzisiejsza data to: ${todayDate}.
+              
+              ZASADY:
+              1. Zwróć obiekt JSON pasujący DOKŁADNIE do tego schematu (zawsze zwracaj wszystkie pola w entities!): 
+              { 
+                "replyToUser": "tekst", 
+                "entities": { 
+                  "job": "nazwa lub null", 
+                  "hours": liczba_lub_null, 
+                  "date": "YYYY-MM-DD", 
+                  "description": "tekst lub null",
+                } 
+              }
+              2. Jeśli użytkownik podaje projekt, MUSI on pasować do jednego z dostępnych.
+              3. Pamiętaj obecny stan! Jeśli w aktualnym stanie formularza są już jakieś dane (np. projekt), PRZEPISZ JE do nowej odpowiedzi, chyba że użytkownik wyraźnie prosi o ich zmianę.
+              4. POLE DATE JEST OBOWIĄZKOWE. Jeśli użytkownik nie wspomniał o dacie, ZAWSZE wstawiaj dzisiejszą ("${todayDate}"). Jeśli powie "wczoraj", oblicz wczorajszą datę.
+              
+              Wiadomość użytkownika: "${currentMessage}"`
+            },
+            {
+              role: 'user',
+              content: `Wiadomość użytkownika: "${currentMessage}"`
+            }
+          ],
+        });
+
+        const textResponse = response.choices[0].message.content;
+        if (!textResponse) throw new Error('OpenAI zwróciło pustą odpowiedź');
+
+        const parsedJson = JSON.parse(textResponse);
+        const dtoInstance = plainToInstance(GeminiResponseDto, parsedJson);
+        const errors = await validate(dtoInstance);
+
+        if (errors.length > 0) {
+          console.warn(`[ChatGPT Próba ${attempt}] Błąd walidacji DTO:`, errors);
+          currentMessage = `Zwróciłeś JSON niezgodny z DTO. Błędy: ${JSON.stringify(errors)}. Popraw to.`;
+          continue;
+        }
+        return dtoInstance;
+
+      } catch (error) {
+        console.warn(`[ChatGPT Próba ${attempt}] Błąd parsowania JSON:`, error);
+        currentMessage = `Zwróciłeś niepoprawny JSON. Zwróć tylko czysty format JSON. Użytkownik pytał o: ${userMessage}`;
+      }
+    }
+
+    throw new InternalServerErrorException('ChatGPT nie działa.');
+}
 
   /**
    * Prywatna metoda chroniąca system przed halucynacjami AI.

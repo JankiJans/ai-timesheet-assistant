@@ -17,9 +17,10 @@ export const ChatWidget = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [bot, setBot] = useState('gemini');
   
   const [extractedData, setExtractedData] = useState<TimesheetState>({
-    job: null, date: null, hours: null, taskType: null, billable: null, description: null
+    job: null, date: null, hours: null, taskType: null, billable: null, description: null, currentBot: null,
   });
 
   /**
@@ -52,7 +53,7 @@ export const ChatWidget = () => {
     setIsLoading(true);
 
     try {
-      const data = await sendChatMessage(userMsg.text, extractedData);
+      const data = await sendChatMessage(userMsg.text, extractedData, bot);
       if (data.entities) setExtractedData(data.entities);
       setMessages((prev) => [...prev, { role: 'assistant', text: data.replyToUser || "Przetworzyłem dane." }]);
     } catch (error) {
@@ -66,6 +67,18 @@ export const ChatWidget = () => {
     <div className="flex flex-col w-full h-[500px] bg-white dark:bg-gray-800 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden font-sans transition-colors duration-300">
       <div className="bg-blue-600 dark:bg-blue-800 text-white p-4 font-bold flex justify-between items-center z-10">
         <span>AI Timesheet Assistant</span>
+
+        <div className="flex border border-blue-400 dark:border-blue-600 rounded-lg overflow-hidden text-xs font-medium cursor-pointer select-none mx-4">
+        <div
+          onClick={() => setBot('chatgpt')} className={`px-3 py-1.5 transition-colors border-r border-blue-400 dark:border-blue-600 ${bot === 'chatgpt' ? 'bg-white text-green-600' : 'bg-red-700/50 hover:bg-blue-700 text-blue-100'}`}>
+          ChatGPT
+        </div>
+        <div
+          onClick={() => setBot('gemini')} className={`px-3 py-1.5 transition-colors ${ bot === 'gemini' ? 'bg-white text-green-600' : 'bg-red-700/50 hover:bg-blue-700 text-blue-100'}`}>
+          Gemini
+        </div>
+      </div>
+
         <span className="text-xl">🤖</span>
       </div>
 
@@ -98,8 +111,8 @@ export const ChatWidget = () => {
             onClick={async () => {
               try {
                 const idKey = window.crypto.randomUUID(); 
-                await createTimesheetEntry(extractedData, idKey);
-                setExtractedData({ job: null, date: null, hours: null, taskType: null, billable: null, description: null });
+                await createTimesheetEntry(extractedData, idKey, bot);
+                setExtractedData({ job: null, date: null, hours: null, taskType: null, billable: null, description: null, currentBot: null });
                 setMessages(prev => [...prev, { role: 'assistant', text: '✅ Wpis został pomyślnie zapisany w bazie! W czym jeszcze mogę pomóc?' }]);
                 window.dispatchEvent(new Event('timesheet-added'));
               } catch (err) {

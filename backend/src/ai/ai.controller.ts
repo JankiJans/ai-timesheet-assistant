@@ -20,7 +20,7 @@ export class AiController {
   @Post()
   @UseInterceptors(KeywordsInterceptor)
   async handleChat(@Body() chatRequest: ChatRequestDto) {
-    const { message, currentState } = chatRequest;
-    return await this.aiService.processChat(message, currentState || {});
+    const { message, currentState, currentBot } = chatRequest;
+    return await this.aiService.processChat(message, currentState, currentBot || 'gemini');
   }
 }

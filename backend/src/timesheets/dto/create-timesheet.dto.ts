@@ -61,4 +61,8 @@ export class CreateTimesheetDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsString()
+  @IsOptional()
+  currentBot!: string;
 }

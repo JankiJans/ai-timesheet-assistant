@@ -58,6 +58,7 @@ export class TimesheetsService {
         taskType: data.taskType || 'Inne',
         billable: data.billable !== undefined && data.billable !== null ? Boolean(data.billable) : true,
         description: data.description || '',
+        currentBot: data.currentBot || ''
       },
     });
   }

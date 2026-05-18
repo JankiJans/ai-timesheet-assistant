@@ -10,4 +10,5 @@ export interface TimesheetState {
   taskType: string | null;
   billable: boolean | null;
   description: string | null;
+  currentBot: string | null;
 }
