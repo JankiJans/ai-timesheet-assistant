@@ -21,6 +21,7 @@ export class AiEntitiesDto {
   @IsString()
   description?: string | null;
 
+  @IsOptional()
   @IsString()
   currentBot?: string
 }
